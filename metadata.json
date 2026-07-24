@@ -1,0 +1,6 @@
+{
+  "name": "Nexus Academy - International & GES Virtual Learning",
+  "description": "Global virtual tutoring platform connecting students across GES WASSCE, Cambridge IGCSE, and AMI Montessori curricula with Google Workspace and Paystack/MoMo integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
