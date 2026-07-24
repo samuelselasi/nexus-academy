@@ -132,7 +132,7 @@ Combining **GES WASSCE** and **Cambridge IGCSE/A-Level** curriculum standards, N
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/nexus-academy.git
+git clone https://github.com/samuelselasi/nexus-academy.git
 cd nexus-academy
 ```
 
