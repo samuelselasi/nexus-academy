@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TutorProfile, Session, Assignment, CurriculumProgress } from './types';
+import React, { useState, useEffect } from 'react';
+import { TutorProfile, Session, Assignment, CurriculumProgress, User } from './types';
 import { mockUsers, mockTutors, mockSessions, mockAssignments, mockCurriculumProgress } from './data/mockData';
 
 import { Header, AppViewRole } from './components/Header';
@@ -13,6 +13,7 @@ import { RevisionHub } from './components/RevisionHub';
 import { BookingModal } from './components/BookingModal';
 import { GoogleMeetModal } from './components/GoogleMeetModal';
 import { CodeArchitectureViewer } from './components/CodeArchitectureViewer';
+import { AuthModal } from './components/AuthModal';
 import { KentePattern, KenteWatermark } from './components/KentePattern';
 import { InteractiveKnowledgeCanvas } from './components/InteractiveKnowledgeCanvas';
 
@@ -24,7 +25,29 @@ export default function App() {
   const [selectedTimezone, setSelectedTimezone] = useState<string>('Africa/Accra');
   const [currency, setCurrency] = useState<'GHS' | 'USD'>('GHS');
 
-  const [sessions, setSessions] = useState<Session[]>(mockSessions);
+  // Authentication State with LocalStorage persistence
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('nexus_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+
+  // Sessions state with LocalStorage persistence
+  const [sessions, setSessions] = useState<Session[]>(() => {
+    try {
+      const saved = localStorage.getItem('nexus_sessions');
+      return saved ? JSON.parse(saved) : mockSessions;
+    } catch {
+      return mockSessions;
+    }
+  });
+
   const [tutors, setTutors] = useState<TutorProfile[]>(mockTutors);
   const [assignments] = useState<Assignment[]>(mockAssignments);
   const [curriculumProgress] = useState<CurriculumProgress[]>(mockCurriculumProgress);
@@ -41,10 +64,40 @@ export default function App() {
   // Active Google Meet Live Virtual Classroom
   const [activeMeetSession, setActiveMeetSession] = useState<Session | null>(null);
 
-  const activeUser = currentRole === 'landing' || currentRole === 'code' || currentRole === 'parent' ? mockUsers['student'] : mockUsers[currentRole];
+  // Persist sessions
+  useEffect(() => {
+    try {
+      localStorage.setItem('nexus_sessions', JSON.stringify(sessions));
+    } catch (e) {
+      console.error('Failed to save sessions:', e);
+    }
+  }, [sessions]);
+
+  // Persist user auth
+  const handleAuthenticateUser = (user: User) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('nexus_user', JSON.stringify(user));
+    } catch (e) {
+      console.error('Failed to save user:', e);
+    }
+    setCurrentRole(user.role);
+    if (user.role === 'student') setStudentTab('dashboard');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('nexus_user');
+    } catch (e) {
+      console.error('Failed to remove user:', e);
+    }
+    setCurrentRole('landing');
+  };
 
   const handleBookingSuccess = (newSession: Session) => {
-    setSessions([newSession, ...sessions]);
+    const updatedSessions = [newSession, ...sessions];
+    setSessions(updatedSessions);
     setSelectedTutorForBooking(null);
     setStudentTab('dashboard');
   };
@@ -59,11 +112,16 @@ export default function App() {
 
   // Registration handler for Students
   const handleRegisterStudent = (data: RegisteredStudentData) => {
-    mockUsers.student.name = data.name;
-    mockUsers.student.email = data.email;
-    if (data.phone) mockUsers.student.phone = data.phone;
-    setCurrentRole('student');
-    setStudentTab('dashboard');
+    const newUser: User = {
+      id: `usr-std-${Date.now()}`,
+      name: data.name,
+      email: data.email,
+      role: 'student',
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
+      timezone: data.timezone || 'Africa/Accra',
+      phone: data.phone,
+    };
+    handleAuthenticateUser(newUser);
   };
 
   // Registration handler for Tutors
@@ -91,9 +149,17 @@ export default function App() {
     };
 
     setTutors([newTutor, ...tutors]);
-    mockUsers.tutor.name = data.name;
-    mockUsers.tutor.email = data.email;
-    setCurrentRole('tutor');
+
+    const newUser: User = {
+      id: newTutor.userId,
+      name: data.name,
+      email: data.email,
+      role: 'tutor',
+      avatar: newTutor.avatar,
+      timezone: 'Africa/Accra',
+      phone: data.phone,
+    };
+    handleAuthenticateUser(newUser);
   };
 
   // Trigger quick instant sample live video classroom launch
@@ -111,15 +177,22 @@ export default function App() {
       {/* Header with Kente Ribbon & View Switches */}
       <Header
         currentRole={currentRole}
-        onRoleChange={setCurrentRole}
+        onRoleChange={(role) => {
+          setCurrentRole(role);
+          if (role === 'student') setStudentTab('dashboard');
+        }}
         selectedTimezone={selectedTimezone}
         onTimezoneChange={setSelectedTimezone}
         currency={currency}
         onCurrencyChange={setCurrency}
-        userName={activeUser.name}
-        userAvatar={activeUser.avatar}
+        currentUser={currentUser}
         isMobileAppFrame={isMobileAppFrame}
         onToggleMobileAppFrame={() => setIsMobileAppFrame(!isMobileAppFrame)}
+        onOpenAuthModal={(m = 'signin') => {
+          setAuthModalMode(m);
+          setIsAuthModalOpen(true);
+        }}
+        onLogout={handleLogout}
       />
 
       {/* Student View Secondary Navigation */}
@@ -178,7 +251,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Layout Container (Renders inside a simulated Mobile Frame if toggled) */}
+      {/* Main Layout Container */}
       <div className={isMobileAppFrame ? "py-8 flex justify-center bg-stone-100 min-h-[calc(100vh-120px)]" : "flex-1"}>
         <div className={isMobileAppFrame ? "w-[390px] h-[780px] bg-white border-[10px] border-stone-800 rounded-[48px] shadow-xl overflow-y-auto relative flex flex-col scrollbar-thin" : "max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8"}>
           
@@ -269,7 +342,7 @@ export default function App() {
                 />
               )}
 
-              {/* Backend Code & Architecture Specifications */}
+              {/* Developer / Code Architecture Viewer */}
               {currentRole === 'code' && (
                 <CodeArchitectureViewer />
               )}
@@ -298,6 +371,14 @@ export default function App() {
         />
       )}
 
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthenticate={handleAuthenticateUser}
+      />
+
       {/* Authentic Kente Bordered Footer */}
       <footer className="bg-white text-slate-600 text-xs border-t border-stone-200 mt-auto relative overflow-hidden">
         <KentePattern className="h-1.5 w-full opacity-90" />
@@ -305,7 +386,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left relative z-10">
           <div className="space-y-1">
             <p className="font-bold text-slate-900">
-              © {new Date().getFullYear()} Akoma Tutoring Ghana. Certified in GES WASSCE, Cambridge CIE & AMI Montessori.
+              © {new Date().getFullYear()} Nexus Academy Ghana. Certified in GES WASSCE, Cambridge CIE & AMI Montessori.
             </p>
             <p className="text-[11px] text-slate-500 font-medium">
               Accra • Kumasi • Cape Coast • Tamale • London • New York • Diaspora Online Learning
@@ -314,13 +395,13 @@ export default function App() {
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-slate-700 font-medium text-[11px]">
             <span className="bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200 text-amber-900 font-bold">
-              Google Workspace API
+              GES & Cambridge Accredited
             </span>
             <span className="bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200 text-emerald-900 font-bold">
-              Paystack & MTN MoMo
+              MTN MoMo & Card Payments
             </span>
             <span className="bg-stone-50 px-2.5 py-1 rounded-lg border border-stone-200 text-sky-900 font-bold">
-              FastAPI + Next.js
+              1-on-1 HD Virtual Classrooms
             </span>
           </div>
         </div>
@@ -329,3 +410,4 @@ export default function App() {
     </div>
   );
 }
+
