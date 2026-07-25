@@ -519,11 +519,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <div className="flex items-center gap-1 text-amber-800 text-xs font-bold">
                       <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
-                      <span>{tutor.rating} ({tutor.reviewCount} reviews)</span>
+                      <span>{tutor.rating} ({tutor.reviewsCount} reviews)</span>
                     </div>
                     <h3 className="text-base font-bold text-slate-900">{tutor.name}</h3>
                     <p className="text-xs text-emerald-800 font-bold">{tutor.location}</p>
-                    <p className="text-[11px] text-slate-500">{tutor.qualifications}</p>
+                    <p className="text-[11px] text-slate-500">{tutor.verificationBadge}</p>
                   </div>
                 </div>
 

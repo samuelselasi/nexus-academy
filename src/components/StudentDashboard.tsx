@@ -4,6 +4,7 @@ import { formatToUserTimezone, getMinutesUntilSession, isJoinable } from '../uti
 import { KenteWatermark, KenteBorderCard } from './KentePattern';
 import { AiDiagnosticPredictor } from './AiDiagnosticPredictor';
 import { StudyGroupsForum } from './StudyGroupsForum';
+import { GoldKenteMilestoneBadges } from './GoldKenteMilestoneBadges';
 import { soundEngine } from '../utils/audioEffects';
 import { motion } from 'motion/react';
 import { Video, Calendar, Clock, BookOpen, Award, CheckCircle2, ArrowRight, Sparkles, FileText, Smartphone, Brain, Users, Layout } from 'lucide-react';
@@ -219,6 +220,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </motion.div>
           )}
+
+          {/* Prominent Gold Kente Milestone Honors Section */}
+          <GoldKenteMilestoneBadges completedHours={pastSessions.length > 0 ? Math.max(12, pastSessions.length * 2) : 12} />
 
           {/* Grid Section: Overview Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

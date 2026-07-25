@@ -13,16 +13,26 @@ export const SmsWhatsAppDispatcher: React.FC = () => {
   const [customText, setCustomText] = useState<string>('Nexus Academy: Your live Google Meet class in Elective Mathematics with Dr. Abena Osei-Mensah starts in 10 minutes.');
   const [isSending, setIsSending] = useState<boolean>(false);
 
-  const handleSendNotification = (e: React.FormEvent) => {
+  const handleSendNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customText.trim()) return;
 
     soundEngine.playUssdKeyClick();
     setIsSending(true);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/dispatch/sms-whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientPhone,
+          channel: channel === 'WHATSAPP' ? 'WHATSAPP' : 'SMS',
+          message: customText,
+        }),
+      });
+
+      const data = await res.json();
       soundEngine.playPaymentSuccessChime();
-      setIsSending(false);
 
       const newLog: SmsNotificationLog = {
         id: 'sms_' + Math.floor(100 + Math.random() * 900),
@@ -33,11 +43,15 @@ export const SmsWhatsAppDispatcher: React.FC = () => {
         messageBody: customText,
         timestamp: new Date().toISOString().replace('T', ' ').slice(0, 16) + ' GMT',
         status: 'DELIVERED',
-        deliveryRef: channel === 'WHATSAPP' ? 'HUBTEL_WA_' + Math.floor(100000 + Math.random() * 900000) : 'HUBTEL_SMS_' + Math.floor(100000 + Math.random() * 900000)
+        deliveryRef: data.dispatchId || (channel === 'WHATSAPP' ? 'HUBTEL_WA_' + Math.floor(100000 + Math.random() * 900000) : 'HUBTEL_SMS_' + Math.floor(100000 + Math.random() * 900000))
       };
 
       setLogs([newLog, ...logs]);
-    }, 1200);
+    } catch (err) {
+      console.warn("Backend dispatch error, applying local fallback log:", err);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (

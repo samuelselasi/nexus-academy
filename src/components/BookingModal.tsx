@@ -37,7 +37,22 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
   const randomTxRef = 'GH_PAYSTACK_' + Math.floor(1000000 + Math.random() * 9000000);
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
+    try {
+      await fetch('/api/payments/paystack/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amountGHS: tutor.hourlyRateGHS,
+          phone: momoNumber,
+          provider: paymentMethod,
+          subject: selectedSubject,
+        }),
+      });
+    } catch (e) {
+      console.warn("Paystack initiate API warning:", e);
+    }
+
     if (paymentMethod === 'MTN_MOMO') {
       soundEngine.playUssdKeyClick();
       setShowUssdPrompt(true);

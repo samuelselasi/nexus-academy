@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus Academy — Interactive Knowledge Network Background</title>
+  <style>
+    /* CSS Reset & Base Layout */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+      background-color: #f4f7f6;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+
+    /* Fixed Canvas Background */
+    #knowledge-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* Hero Text Overlay Container */
+    .hero-container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(180, 200, 220, 0.6);
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #2563eb;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 5vw, 4.2rem);
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.15;
+      max-width: 850px;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.05rem, 2vw, 1.3rem);
+      color: #475569;
+      max-width: 620px;
+      margin-bottom: 2.25rem;
+      line-height: 1.6;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background-color: #1e3a8a;
+      color: #ffffff;
+      padding: 0.9rem 2rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      box-shadow: 0 10px 20px -5px rgba(30, 58, 138, 0.3);
+      transition: all 0.25s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+      transform: translateY(-2px);
+      box-shadow: 0 14px 24px -5px rgba(30, 58, 138, 0.4);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: #1e293b;
+      padding: 0.9rem 2rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      text-decoration: none;
+      border: 1px solid #cbd5e1;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .btn-secondary:hover {
+      background-color: #f8fafc;
+      border-color: #94a3b8;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HTML5 Canvas Fixed Background -->
+  <canvas id="knowledge-canvas"></canvas>
+
+  <!-- Content Overlay -->
+  <main class="hero-container">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      Interactive Knowledge Network
+    </div>
+
+    <h1 class="hero-title">
+      Connecting Students with <span>World-Class Mentors</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      Experience personalized 1-on-1 tutoring designed for WASSCE, IGCSE & Cambridge A-Levels. Watch the background nodes respond gently as you explore.
+    </p>
+
+    <div class="cta-group">
+      <a href="#" class="btn-primary">Find a Tutor Today</a>
+      <a href="#" class="btn-secondary">Explore Subjects</a>
+    </div>
+  </main>
+
+  <!-- Vanilla JavaScript Canvas Animation Logic -->
+  <script>
+    (function () {
+      const canvas = document.getElementById('knowledge-canvas');
+      const ctx = canvas.getContext('2d');
+
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+
+      // Mouse tracking state
+      const mouse = {
+        x: -1000,
+        y: -1000,
+        targetX: -1000,
+        targetY: -1000,
+        radius: 200 // Radius of influence around cursor
+      };
+
+      // Mouse event listeners for smooth interaction
+      window.addEventListener('mousemove', (e) => {
+        mouse.targetX = e.clientX;
+        mouse.targetY = e.clientY;
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          mouse.targetX = e.touches[0].clientX;
+          mouse.targetY = e.touches[0].clientY;
+        }
+      });
+
+      window.addEventListener('mouseleave', () => {
+        mouse.targetX = -1000;
+        mouse.targetY = -1000;
+      });
+
+      // Handle window resize dynamically
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initNodes();
+      });
+
+      // Node structure definition
+      let nodes = [];
+
+      function initNodes() {
+        nodes = [];
+        // Scale number of nodes based on viewport size
+        const nodeCount = Math.min(120, Math.floor((width * height) / 10000));
+        
+        for (let i = 0; i < nodeCount; i++) {
+          const x = Math.random() * width;
+          const y = Math.random() * height;
+          nodes.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            radius: Math.random() * 2.5 + 1.5,
+            baseAlpha: Math.random() * 0.45 + 0.35
+          });
+        }
+      }
+
+      initNodes();
+
+      // Main Animation Loop
+      function animate() {
+        // Smoothly ease cursor position for fluid interaction
+        mouse.x += (mouse.targetX - mouse.x) * 0.07;
+        mouse.y += (mouse.targetY - mouse.y) * 0.07;
+
+        // Clear canvas with clean, light academic gray/blue background
+        ctx.fillStyle = '#f4f7f6';
+        ctx.fillRect(0, 0, width, height);
+
+        const maxConnectDistance = 150;
+
+        // Update & draw nodes
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
+
+          // Natural slow drift motion
+          node.x += node.vx;
+          node.y += node.vy;
+
+          // Soft bounce on edge collision
+          if (node.x < 0 || node.x > width) node.vx *= -1;
+          if (node.y < 0 || node.y > height) node.vy *= -1;
+
+          // Mouse gravitation effect with smooth delayed easing
+          const dx = mouse.x - node.x;
+          const dy = mouse.y - node.y;
+          const distToMouse = Math.sqrt(dx * dx + dy * dy);
+
+          if (distToMouse < mouse.radius && distToMouse > 0) {
+            const force = (1 - distToMouse / mouse.radius) * 0.055;
+            node.x += dx * force;
+            node.y += dy * force;
+          }
+
+          // Render soft blue node dot
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(37, 99, 235, ${node.baseAlpha})`; // soft blue
+          ctx.fill();
+
+          // Render connecting faint lines to adjacent nodes
+          for (let j = i + 1; j < nodes.length; j++) {
+            const other = nodes[j];
+            const ndx = other.x - node.x;
+            const ndy = other.y - node.y;
+            const distance = Math.sqrt(ndx * ndx + ndy * ndy);
+
+            if (distance < maxConnectDistance) {
+              const lineAlpha = (1 - distance / maxConnectDistance) * 0.22;
+              ctx.beginPath();
+              ctx.moveTo(node.x, node.y);
+              ctx.lineTo(other.x, other.y);
+              ctx.strokeStyle = `rgba(59, 130, 246, ${lineAlpha})`; // faint line
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    })();
+  </script>
+</body>
+</html>

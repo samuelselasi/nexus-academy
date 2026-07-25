@@ -7,11 +7,13 @@ import { DollarSign, Wallet, ArrowUpRight, Download, CheckCircle2, ShieldCheck, 
 
 interface TutorPayoutWalletProps {
   tutorName?: string;
+  tutorProfile?: any;
   currency: 'GHS' | 'USD';
 }
 
 export const TutorPayoutWallet: React.FC<TutorPayoutWalletProps> = ({
   tutorName = 'Dr. Abena Osei-Mensah',
+  tutorProfile,
   currency,
 }) => {
   const [payouts, setPayouts] = useState<TutorPayoutRecord[]>(mockTutorPayouts);
@@ -20,22 +22,33 @@ export const TutorPayoutWallet: React.FC<TutorPayoutWalletProps> = ({
   const [accountNumber, setAccountNumber] = useState<string>('020 987 6543');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  const handleWithdrawalSubmit = (e: React.FormEvent) => {
+  const handleWithdrawalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (withdrawAmount <= 0) return;
 
     soundEngine.playUssdKeyClick();
     setIsProcessing(true);
 
-    setTimeout(() => {
-      soundEngine.playPaymentSuccessChime();
-      setIsProcessing(false);
+    try {
+      const res = await fetch('/api/tutors/payout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tutorId: 'tut_01',
+          amountGHS: withdrawAmount,
+          momoNumber: accountNumber,
+          provider: payoutMethod,
+        }),
+      });
 
-      const taxDeduction = Math.round(withdrawAmount * 0.05); // 5% withholding tax
-      const netAmount = withdrawAmount - taxDeduction;
+      const data = await res.json();
+      soundEngine.playPaymentSuccessChime();
+
+      const taxDeduction = data.graWithholdingTaxGHS ?? Math.round(withdrawAmount * 0.05);
+      const netAmount = data.netPayoutGHS ?? (withdrawAmount - taxDeduction);
 
       const newRecord: TutorPayoutRecord = {
-        id: 'po_' + Math.floor(100 + Math.random() * 900),
+        id: data.payoutReference || ('po_' + Math.floor(100 + Math.random() * 900)),
         date: new Date().toISOString().split('T')[0],
         amountGHS: withdrawAmount,
         payoutMethod: payoutMethod,
@@ -46,7 +59,11 @@ export const TutorPayoutWallet: React.FC<TutorPayoutWalletProps> = ({
       };
 
       setPayouts([newRecord, ...payouts]);
-    }, 1500);
+    } catch (err) {
+      console.warn("Backend payout call failed, using client fallback:", err);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDownloadTaxStatement = () => {

@@ -14,6 +14,7 @@ import { BookingModal } from './components/BookingModal';
 import { GoogleMeetModal } from './components/GoogleMeetModal';
 import { CodeArchitectureViewer } from './components/CodeArchitectureViewer';
 import { KentePattern, KenteWatermark } from './components/KentePattern';
+import { InteractiveKnowledgeCanvas } from './components/InteractiveKnowledgeCanvas';
 
 import { motion, AnimatePresence } from 'motion/react';
 import { LayoutDashboard, Search, Smartphone, Video, BookOpen, Users } from 'lucide-react';
@@ -103,7 +104,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col selection:bg-amber-100 selection:text-amber-900 transition-colors">
+    <div className="min-h-screen bg-transparent text-slate-900 font-sans flex flex-col selection:bg-amber-100 selection:text-amber-900 transition-colors relative">
+      {/* Interactive HTML5 Canvas Knowledge Network Background */}
+      <InteractiveKnowledgeCanvas />
       
       {/* Header with Kente Ribbon & View Switches */}
       <Header

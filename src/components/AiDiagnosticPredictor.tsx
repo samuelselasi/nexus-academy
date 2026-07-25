@@ -17,22 +17,49 @@ export const AiDiagnosticPredictor: React.FC<AiDiagnosticPredictorProps> = ({ on
   const filteredQuestions = mockDiagnosticQuestions.filter(q => q.curriculum === selectedCurriculum || q.subject === selectedSubject);
   const questionsToDisplay = filteredQuestions.length > 0 ? filteredQuestions : mockDiagnosticQuestions;
 
+  const [apiResult, setApiResult] = useState<{
+    percentage: number;
+    predictedWAECGrade: string;
+    predictedCambridgeGrade: string;
+    strengths: string[];
+    focusAreas: string[];
+    aiFeedback?: string;
+  } | null>(null);
+
   const handleSelectOption = (questionId: string, optionIndex: number) => {
     soundEngine.playUssdKeyClick();
     setUserAnswers(prev => ({ ...prev, [questionId]: optionIndex }));
   };
 
-  const handleSubmitDiagnostic = () => {
+  const handleSubmitDiagnostic = async () => {
     soundEngine.playWhiteboardSound();
     setCurrentStep('analyzing');
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/ai/diagnostic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          curriculum: selectedCurriculum,
+          subject: selectedSubject,
+          userAnswers,
+          questionCount: questionsToDisplay.length,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.result) {
+        setApiResult(data.result);
+      }
+    } catch (err) {
+      console.warn("API call failed, using client fallback:", err);
+    } finally {
       soundEngine.playPaymentSuccessChime();
       setCurrentStep('results');
-    }, 2200);
+    }
   };
 
-  // Calculate score & predicted grade
+  // Calculate local fallback values
   let correctCount = 0;
   questionsToDisplay.forEach(q => {
     if (userAnswers[q.id] === q.correctIndex) {
@@ -40,16 +67,18 @@ export const AiDiagnosticPredictor: React.FC<AiDiagnosticPredictorProps> = ({ on
     }
   });
 
-  const percentage = Math.round((correctCount / questionsToDisplay.length) * 100) || 75;
+  const percentage = apiResult?.percentage ?? (Math.round((correctCount / questionsToDisplay.length) * 100) || 75);
 
-  let predictedWAECGrade = 'A1 (Distinction)';
-  let predictedCambridgeGrade = 'A* (90-100%)';
-  if (percentage < 50) {
-    predictedWAECGrade = 'C4 / C5 (Credit Pass)';
-    predictedCambridgeGrade = 'C (60-69%)';
-  } else if (percentage < 75) {
-    predictedWAECGrade = 'B2 / B3 (Very Good)';
-    predictedCambridgeGrade = 'B (70-79%)';
+  let predictedWAECGrade = apiResult?.predictedWAECGrade || 'A1 (Distinction)';
+  let predictedCambridgeGrade = apiResult?.predictedCambridgeGrade || 'A* (90-100%)';
+  if (!apiResult) {
+    if (percentage < 50) {
+      predictedWAECGrade = 'C4 / C5 (Credit Pass)';
+      predictedCambridgeGrade = 'C (60-69%)';
+    } else if (percentage < 75) {
+      predictedWAECGrade = 'B2 / B3 (Very Good)';
+      predictedCambridgeGrade = 'B (70-79%)';
+    }
   }
 
   return (
